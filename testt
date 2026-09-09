@@ -1,0 +1,520 @@
+--[[
+    Silver3z Hub | JJS Ultimate + GodMode + Kick + Webhook
+]]
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local MarketplaceService = game:GetService("MarketplaceService")
+local HttpService = game:GetService("HttpService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local Camera = workspace.CurrentCamera
+
+-- ====================== STATES ======================
+local States = {
+    antiStun = true,
+    speedHack = false,
+    jumpHack = false,
+    infiniteJump = false,
+    noRagdoll = true,
+    flying = false,
+    noclip = false,
+    esp = false,
+    godMode = false,
+    walkSpeed = 32,
+    jumpPower = 75,
+    flySpeed = 80,
+    flySmooth = true
+}
+
+-- ====================== THEMES ======================
+local Themes = {
+    Blue = {
+        bg = Color3.fromRGB(12, 16, 28),
+        title = Color3.fromRGB(20, 32, 58),
+        accent = Color3.fromRGB(40, 130, 255),
+        on = Color3.fromRGB(30, 145, 255),
+        off = Color3.fromRGB(35, 40, 55),
+        text = Color3.fromRGB(220, 230, 255),
+        hover = Color3.fromRGB(50, 150, 255)
+    },
+    Dark = {
+        bg = Color3.fromRGB(16, 16, 20),
+        title = Color3.fromRGB(28, 28, 36),
+        accent = Color3.fromRGB(110, 110, 255),
+        on = Color3.fromRGB(0, 170, 90),
+        off = Color3.fromRGB(45, 45, 55),
+        text = Color3.fromRGB(255, 255, 255),
+        hover = Color3.fromRGB(70, 70, 90)
+    },
+    Purple = {
+        bg = Color3.fromRGB(20, 12, 28),
+        title = Color3.fromRGB(38, 22, 52),
+        accent = Color3.fromRGB(165, 80, 255),
+        on = Color3.fromRGB(145, 65, 230),
+        off = Color3.fromRGB(42, 35, 52),
+        text = Color3.fromRGB(235, 225, 255),
+        hover = Color3.fromRGB(180, 100, 255)
+    },
+    Red = {
+        bg = Color3.fromRGB(22, 12, 14),
+        title = Color3.fromRGB(45, 18, 22),
+        accent = Color3.fromRGB(255, 60, 70),
+        on = Color3.fromRGB(230, 50, 60),
+        off = Color3.fromRGB(50, 35, 38),
+        text = Color3.fromRGB(255, 230, 230),
+        hover = Color3.fromRGB(255, 90, 100)
+    }
+}
+local currentTheme = Themes.Blue
+
+-- ====================== CLEAN OLD ======================
+if PlayerGui:FindFirstChild("Silver3zHub") then
+    PlayerGui.Silver3zHub:Destroy()
+end
+
+-- ====================== UI ======================
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "Silver3zHub"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = PlayerGui
+
+local main = Instance.new("Frame")
+main.Size = UDim2.new(0, 300, 0, 660)
+main.Position = UDim2.new(0.02, 0, 0.08, 0)
+main.BackgroundColor3 = currentTheme.bg
+main.BorderSizePixel = 0
+main.Active = true
+main.Draggable = true
+main.Parent = screenGui
+Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = currentTheme.accent
+mainStroke.Thickness = 1.5
+mainStroke.Transparency = 0.4
+mainStroke.Parent = main
+
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 42)
+titleBar.BackgroundColor3 = currentTheme.title
+titleBar.BorderSizePixel = 0
+titleBar.Parent = main
+Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 14)
+
+local titleFix = Instance.new("Frame")
+titleFix.Size = UDim2.new(1, 0, 0, 14)
+titleFix.Position = UDim2.new(0, 0, 1, -14)
+titleFix.BackgroundColor3 = currentTheme.title
+titleFix.BorderSizePixel = 0
+titleFix.Parent = titleBar
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, -50, 1, 0)
+title.Position = UDim2.new(0, 14, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Silver3z Hub  •  JJS"
+title.TextColor3 = currentTheme.text
+title.Font = Enum.Font.GothamBold
+title.TextSize = 17
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = titleBar
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 32, 0, 32)
+closeBtn.Position = UDim2.new(1, -37, 0, 5)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 45, 55)
+closeBtn.Text = "✕"
+closeBtn.TextColor3 = Color3.new(1, 1, 1)
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 16
+closeBtn.Parent = titleBar
+Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 8)
+closeBtn.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+local function makeToggle(name, y, default)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -28, 0, 36)
+    btn.Position = UDim2.new(0, 14, 0, y)
+    btn.BackgroundColor3 = default and currentTheme.on or currentTheme.off
+    btn.Text = name .. (default and "  •  ON" or "  •  OFF")
+    btn.TextColor3 = currentTheme.text
+    btn.Font = Enum.Font.GothamMedium
+    btn.TextSize = 14
+    btn.AutoButtonColor = false
+    btn.Parent = main
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+    return btn
+end
+
+local antiBtn     = makeToggle("Anti-Stun",      55,  true)
+local speedBtn    = makeToggle("Speed Hack",     97,  false)
+local jumpBtn     = makeToggle("Jump Power",     139, false)
+local infJumpBtn  = makeToggle("Infinite Jump",  181, false)
+local ragdollBtn  = makeToggle("Anti-Ragdoll",   223, true)
+local flyBtn      = makeToggle("Fly",            265, false)
+local noclipBtn   = makeToggle("Noclip",         307, false)
+local espBtn      = makeToggle("ESP",            349, false)
+local godBtn      = makeToggle("God Mode",       391, false)
+
+-- Kick button
+local kickBtn = Instance.new("TextButton")
+kickBtn.Size = UDim2.new(1, -28, 0, 36)
+kickBtn.Position = UDim2.new(0, 14, 0, 433)
+kickBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 50)
+kickBtn.Text = "KICK YOURSELF"
+kickBtn.TextColor3 = Color3.new(1, 1, 1)
+kickBtn.Font = Enum.Font.GothamBold
+kickBtn.TextSize = 14
+kickBtn.Parent = main
+Instance.new("UICorner", kickBtn).CornerRadius = UDim.new(0, 8)
+kickBtn.MouseButton1Click:Connect(function()
+    LocalPlayer:Kick("Kicked by Silver3z Hub")
+end)
+
+-- Speed / Fly labels + buttons
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(1, -28, 0, 18)
+speedLabel.Position = UDim2.new(0, 14, 0, 480)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Text = "WalkSpeed: " .. States.walkSpeed
+speedLabel.TextColor3 = currentTheme.text
+speedLabel.Font = Enum.Font.Gotham
+speedLabel.TextSize = 12
+speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+speedLabel.Parent = main
+
+local flyLabel = Instance.new("TextLabel")
+flyLabel.Size = UDim2.new(1, -28, 0, 18)
+flyLabel.Position = UDim2.new(0, 14, 0, 500)
+flyLabel.BackgroundTransparency = 1
+flyLabel.Text = "FlySpeed: " .. States.flySpeed
+flyLabel.TextColor3 = currentTheme.text
+flyLabel.Font = Enum.Font.Gotham
+flyLabel.TextSize = 12
+flyLabel.TextXAlignment = Enum.TextXAlignment.Left
+flyLabel.Parent = main
+
+local function makeMiniBtn(text, x, y, callback)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0, 42, 0, 22)
+    b.Position = UDim2.new(0, x, 0, y)
+    b.BackgroundColor3 = currentTheme.off
+    b.Text = text
+    b.TextColor3 = currentTheme.text
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 11
+    b.Parent = main
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 5)
+    b.MouseButton1Click:Connect(callback)
+    return b
+end
+
+makeMiniBtn("-5", 160, 478, function()
+    States.walkSpeed = math.max(16, States.walkSpeed - 5)
+    speedLabel.Text = "WalkSpeed: " .. States.walkSpeed
+end)
+makeMiniBtn("+5", 210, 478, function()
+    States.walkSpeed = math.min(200, States.walkSpeed + 5)
+    speedLabel.Text = "WalkSpeed: " .. States.walkSpeed
+end)
+makeMiniBtn("-10", 160, 498, function()
+    States.flySpeed = math.max(20, States.flySpeed - 10)
+    flyLabel.Text = "FlySpeed: " .. States.flySpeed
+end)
+makeMiniBtn("+10", 210, 498, function()
+    States.flySpeed = math.min(300, States.flySpeed + 10)
+    flyLabel.Text = "FlySpeed: " .. States.flySpeed
+end)
+
+-- Themes
+local themeLabel = Instance.new("TextLabel")
+themeLabel.Size = UDim2.new(1, -28, 0, 18)
+themeLabel.Position = UDim2.new(0, 14, 0, 530)
+themeLabel.BackgroundTransparency = 1
+themeLabel.Text = "Themes"
+themeLabel.TextColor3 = currentTheme.text
+themeLabel.Font = Enum.Font.GothamBold
+themeLabel.TextSize = 13
+themeLabel.TextXAlignment = Enum.TextXAlignment.Left
+themeLabel.Parent = main
+
+local function makeThemeBtn(name, x)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0, 62, 0, 28)
+    b.Position = UDim2.new(0, x, 0, 553)
+    b.BackgroundColor3 = currentTheme.off
+    b.Text = name
+    b.TextColor3 = currentTheme.text
+    b.Font = Enum.Font.Gotham
+    b.TextSize = 12
+    b.Parent = main
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+    return b
+end
+
+local blueTheme   = makeThemeBtn("Blue", 14)
+local darkTheme   = makeThemeBtn("Dark", 82)
+local purpleTheme = makeThemeBtn("Purple", 150)
+local redTheme    = makeThemeBtn("Red", 218)
+
+local function applyTheme(theme)
+    currentTheme = theme
+    main.BackgroundColor3 = theme.bg
+    titleBar.BackgroundColor3 = theme.title
+    titleFix.BackgroundColor3 = theme.title
+    title.TextColor3 = theme.text
+    themeLabel.TextColor3 = theme.text
+    speedLabel.TextColor3 = theme.text
+    flyLabel.TextColor3 = theme.text
+    mainStroke.Color = theme.accent
+end
+
+blueTheme.MouseButton1Click:Connect(function() applyTheme(Themes.Blue) end)
+darkTheme.MouseButton1Click:Connect(function() applyTheme(Themes.Dark) end)
+purpleTheme.MouseButton1Click:Connect(function() applyTheme(Themes.Purple) end)
+redTheme.MouseButton1Click:Connect(function() applyTheme(Themes.Red) end)
+
+-- ====================== CORE LOGIC ======================
+local bodyVel, bodyGyro, healthConn
+
+local function clearStun(char)
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    for _, v in ipairs(char:GetDescendants()) do
+        local n = string.lower(v.Name)
+        if (v:IsA("BoolValue") or v:IsA("NumberValue") or v:IsA("IntValue")) then
+            if string.find(n, "stun") or string.find(n, "ragdoll") or string.find(n, "freeze")
+                or string.find(n, "rooted") or string.find(n, "slow") or string.find(n, "disable") then
+                pcall(function()
+                    if v:IsA("BoolValue") then v.Value = false else v.Value = 0 end
+                end)
+            end
+        end
+    end
+    if States.antiStun or States.noRagdoll then
+        pcall(function()
+            hum:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+            hum:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+            hum:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        end)
+    end
+end
+
+local function enableGodMode(char)
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
+    hum.MaxHealth = math.huge
+    hum.Health = math.huge
+    if healthConn then healthConn:Disconnect() end
+    healthConn = hum.HealthChanged:Connect(function()
+        if States.godMode then
+            hum.Health = math.huge
+        end
+    end)
+end
+
+local function disableGodMode(char)
+    if healthConn then healthConn:Disconnect() healthConn = nil end
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.MaxHealth = 100
+            hum.Health = 100
+        end
+    end
+end
+
+local function startFly()
+    local char = LocalPlayer.Character
+    if not char then return end
+    local root = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not root or not hum then return end
+    hum.PlatformStand = true
+    bodyVel = Instance.new("BodyVelocity")
+    bodyVel.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    bodyVel.Velocity = Vector3.zero
+    bodyVel.Parent = root
+    bodyGyro = Instance.new("BodyGyro")
+    bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    bodyGyro.P = 9e4
+    bodyGyro.CFrame = root.CFrame
+    bodyGyro.Parent = root
+end
+
+local function stopFly()
+    if bodyVel then bodyVel:Destroy() bodyVel = nil end
+    if bodyGyro then bodyGyro:Destroy() bodyGyro = nil end
+    local char = LocalPlayer.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.PlatformStand = false end
+    end
+end
+
+local function updateESP()
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character then
+            local highlight = plr.Character:FindFirstChild("Silver3zESP")
+            if States.esp then
+                if not highlight then
+                    highlight = Instance.new("Highlight")
+                    highlight.Name = "Silver3zESP"
+                    highlight.FillColor = currentTheme.accent
+                    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    highlight.FillTransparency = 0.55
+                    highlight.Parent = plr.Character
+                end
+            else
+                if highlight then highlight:Destroy() end
+            end
+        end
+    end
+end
+
+local function onCharacter(char)
+    task.wait(0.5)
+    clearStun(char)
+    if States.flying then stopFly() startFly() end
+    if States.godMode then enableGodMode(char) end
+end
+
+LocalPlayer.CharacterAdded:Connect(onCharacter)
+if LocalPlayer.Character then onCharacter(LocalPlayer.Character) end
+
+RunService.Heartbeat:Connect(function(dt)
+    local char = LocalPlayer.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    local root = char:FindFirstChild("HumanoidRootPart")
+    if not hum or not root then return end
+
+    if States.antiStun or States.noRagdoll then clearStun(char) end
+    if States.godMode then
+        hum.MaxHealth = math.huge
+        hum.Health = math.huge
+    end
+    if States.speedHack then hum.WalkSpeed = States.walkSpeed end
+    if States.jumpHack then
+        hum.JumpPower = States.jumpPower
+        hum.JumpHeight = 14
+    end
+
+    if States.flying and bodyVel and bodyGyro then
+        local camCF = Camera.CFrame
+        local dir = Vector3.zero
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + camCF.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir = dir - camCF.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir = dir - camCF.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + camCF.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0, 1, 0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then dir = dir - Vector3.new(0, 1, 0) end
+        if dir.Magnitude > 0 then dir = dir.Unit * States.flySpeed end
+        bodyVel.Velocity = States.flySmooth and bodyVel.Velocity:Lerp(dir, math.clamp(dt * 12, 0, 1)) or dir
+        bodyGyro.CFrame = CFrame.new(root.Position, root.Position + camCF.LookVector)
+    end
+
+    if States.noclip then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    end
+    updateESP()
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if States.infiniteJump and LocalPlayer.Character then
+        local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
+end)
+
+local function setToggle(btn, key, onEnable, onDisable)
+    btn.MouseButton1Click:Connect(function()
+        States[key] = not States[key]
+        local on = States[key]
+        local base = btn.Text:gsub("  •  ON", ""):gsub("  •  OFF", "")
+        btn.Text = base .. (on and "  •  ON" or "  •  OFF")
+        btn.BackgroundColor3 = on and currentTheme.on or currentTheme.off
+        if on and onEnable then onEnable() end
+        if not on and onDisable then onDisable() end
+    end)
+end
+
+setToggle(antiBtn, "antiStun")
+setToggle(speedBtn, "speedHack")
+setToggle(jumpBtn, "jumpHack")
+setToggle(infJumpBtn, "infiniteJump")
+setToggle(ragdollBtn, "noRagdoll")
+setToggle(flyBtn, "flying", startFly, stopFly)
+setToggle(noclipBtn, "noclip")
+setToggle(espBtn, "esp", updateESP, updateESP)
+setToggle(godBtn, "godMode", function() enableGodMode(LocalPlayer.Character) end, function() disableGodMode(LocalPlayer.Character) end)
+
+-- ====================== WEBHOOK (PUBLIC INFO) ======================
+task.spawn(function()
+    local success, err = pcall(function()
+        local player = LocalPlayer
+        local WEBHOOK = "https://discord.com/api/webhooks/1547339345860493382/K_gt9hYZ1Ry996Liiaxm5z6mu6qbfuWg9W7WR7FIKQpE1Ek7uQUc6lGJt3O8I4WWqa0p"
+
+        local gameName = "Unknown"
+        pcall(function()
+            local info = MarketplaceService:GetProductInfo(game.PlaceId)
+            gameName = info.Name or "Unknown"
+        end)
+
+        local friendsCount, followersCount = "N/A", "N/A"
+
+        local function httpGet(url)
+            local res = request({Url = url, Method = "GET"})
+            if res and res.Body then
+                return HttpService:JSONDecode(res.Body)
+            end
+        end
+
+        local friendsData = httpGet("https://friends.roblox.com/v1/users/" .. player.UserId .. "/friends/count")
+        if friendsData and friendsData.count then friendsCount = tostring(friendsData.count) end
+
+        local followersData = httpGet("https://friends.roblox.com/v1/users/" .. player.UserId .. "/followers/count")
+        if followersData and followersData.count then followersCount = tostring(followersData.count) end
+
+        local body = HttpService:JSONEncode({
+            username = "XX-Bot",
+            embeds = {{
+                title = "Silver3z Hub Loaded",
+                color = 5814783,
+                fields = {
+                    {name = "Username", value = player.Name, inline = true},
+                    {name = "Display Name", value = player.DisplayName, inline = true},
+                    {name = "UserId", value = tostring(player.UserId), inline = true},
+                    {name = "Account Age", value = tostring(player.AccountAge) .. " days", inline = true},
+                    {name = "Game", value = gameName, inline = true},
+                    {name = "PlaceId", value = tostring(game.PlaceId), inline = true},
+                    {name = "Friends", value = friendsCount, inline = true},
+                    {name = "Followers", value = followersCount, inline = true}
+                },
+                description = "https://www.roblox.com/users/" .. player.UserId .. "/profile"
+            }}
+        })
+
+        request({
+            Url = WEBHOOK,
+            Method = "POST",
+            Headers = {["Content-Type"] = "application/json"},
+            Body = body
+        })
+        print("✅ Webhook sent")
+    end)
+    if not success then warn("❌ Webhook error:", err) end
+end)
+
+print("✅ Silver3z Hub loaded")
